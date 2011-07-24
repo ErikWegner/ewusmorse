@@ -14,22 +14,22 @@ public class EwusMorse extends MIDlet implements ActionListener {
 
     Label morseCodeDisplay;
     
+    private void addButtons(char start, int count, Container container) {
+        char c = start;
+        for (int ic = 0; ic < count; ic++) {
+            container.addComponent(new Button(String.valueOf(c)));
+            c = (char)(c + 1);   
+        }
+    }
+    
     public void startApp() {
         Display.init(this);
 
         morseCodeDisplay = new Label(". .-- ..- ...");
         
         Container buttons = new Container(new GridLayout(6, 6));
-        char c = 'A';
-        for (int ic = 0; ic < 26; ic++) {
-            buttons.addComponent(new Button(String.valueOf(c)));
-            c = (char)(c + 1);   
-        }
-        c = '0';
-        for (int ic = 0; ic < 10; ic++) {
-            buttons.addComponent(new Button(String.valueOf(c)));
-            c = (char)(c + 1);            
-        }
+        addButtons('A', 26, buttons);
+        addButtons('0', 10, buttons);
         
         Form f = new Form("EWUS MorseCode");
         f.setLayout(new BorderLayout());
