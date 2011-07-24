@@ -12,8 +12,10 @@ import com.sun.lwuit.layouts.GridLayout;
  */
 public class EwusMorse extends MIDlet implements ActionListener {
 
+    Form main, form1, form0;
+    
     Label morseCodeDisplay;
-    public static long dih = 100, dah = 3 * dih;
+    public static long dih = 150, dah = 3 * dih;
     
     
     private void addButtons(char start, int count, Container container) {
@@ -41,6 +43,7 @@ public class EwusMorse extends MIDlet implements ActionListener {
         addButtons('0', 10, buttons);
         
         Form f = new Form("EWUS MorseCode");
+        main = f;
         f.setLayout(new BorderLayout());
         
         f.addComponent(BorderLayout.NORTH, morseCodeDisplay);
@@ -56,7 +59,15 @@ public class EwusMorse extends MIDlet implements ActionListener {
         
         Command blinkCommand = new Command("Blink");
         f.addCommand(blinkCommand);
+        
+        Command clearCommand = new Command("Clear");
+        f.addCommand(clearCommand);
         f.setCommandListener(this);
+        
+        form0 = new Form(); // Light off
+        form0.getStyle().setBgColor(0x000000);
+        form1 = new Form(); // Light on
+        form1.getStyle().setBgColor(0xffffff);
     }
 
     public void pauseApp() {
@@ -65,10 +76,74 @@ public class EwusMorse extends MIDlet implements ActionListener {
     public void destroyApp(boolean unconditional) {
     }
 
-    protected void sleep(long millisecs) {
-        try {
-            Thread.sleep(millisecs);
-        } catch (InterruptedException e) {};
+    boolean vibrate = false;
+    
+    private class BlinkThread extends Thread {
+        
+        protected javax.microedition.lcdui.Display display;
+        
+        public void setDiplay(javax.microedition.lcdui.Display display) {
+            this.display = display;
+        }
+        
+        protected void msleep(long millisecs) {
+            try {
+                Thread.sleep(millisecs);
+            } catch (InterruptedException e) {};
+        }
+        
+        public void run() {
+            boolean lastCharWasBlank = false;
+            String text = morseCodeDisplay.getText();
+            
+            if (!vibrate) {
+                form0.show();
+                msleep(dah);
+            }
+            
+            for (int i = 0; i < text.length(); i++) {
+                char ch = text.charAt(i);
+                if (ch == ' ' && lastCharWasBlank) {
+                    // long pause
+                    msleep(dah);
+                } else if (ch == ' ') {
+                    // short pause
+                    lastCharWasBlank = true;
+                    msleep(dih);
+                } else {
+                    lastCharWasBlank = false;
+                    if (ch == '.') {
+                        // dot = short
+                        if (vibrate) {
+                            display.vibrate((int)dih);
+                        } else {
+                            // blink
+                            form1.show();
+                            Thread.yield();
+                            msleep(dih);
+                            form0.show();
+                            Thread.yield();
+                        }
+                    } else if (ch == '-') {
+                        // dash = long
+                        if (vibrate) {
+                            display.vibrate((int)dah);
+                        } else {
+                            // blink
+                            form1.show();
+                            Thread.yield();
+                            msleep(dah);
+                            form0.show();
+                            Thread.yield();
+                        }
+                    }
+                }
+            }
+            if (!vibrate) {
+                msleep(dah);
+                main.show();
+            }
+        }
     }
     
     public void actionPerformed(ActionEvent ae) {
@@ -76,44 +151,26 @@ public class EwusMorse extends MIDlet implements ActionListener {
         if (c.getCommandName().equals("Exit")) {
             notifyDestroyed();
         }
+        if (c.getCommandName().equals("Clear")) {
+            morseCodeDisplay.setText("");
+        }
         if (c.getCommandName().startsWith("Morse ")) {
-            morseCodeDisplay.setText(MorseCodeTable.getMorse(c.getCommandName().charAt(6)));
+            String t = morseCodeDisplay.getText();
+            if (t.length() > 0) {
+                t = t + "  ";
+            } else {
+                //Label disappears in emulator
+                main.repaint();
+            }
+            t = t + MorseCodeTable.getMorse(c.getCommandName().charAt(6));
+            morseCodeDisplay.setText(t);
+            ae.consume();
         }
         if (c.getCommandName().equals("Vibrate") || c.getCommandName().equals("Blink")) {
-            boolean vibrate = c.getCommandName().equals("Vibrate");
-            boolean lastCharWasBlank = false;
-            String text = morseCodeDisplay.getText();
-            
-            for (int i = 0; i < text.length(); i++) {
-                char ch = text.charAt(i);
-                if (ch == ' ' && lastCharWasBlank) {
-                    // long pause
-                    sleep(dah);
-                } else if (ch == ' ') {
-                    // short pause
-                    lastCharWasBlank = true;
-                    sleep(dih);
-                } else {
-                    lastCharWasBlank = false;
-                    if (ch == '.') {
-                        // dot = short
-                        if (vibrate) {
-                            javax.microedition.lcdui.Display.getDisplay(this).vibrate((int)dih);
-                        } else {
-                            // blink
-                        }
-                    } else if (ch == '-') {
-                        // dash = long
-                        if (vibrate) {
-                            javax.microedition.lcdui.Display.getDisplay(this).vibrate((int)dah);
-                        } else {
-                            // blink
-                        }
-                    }
-                }
-            }
-            
-            
+            vibrate = c.getCommandName().equals("Vibrate");
+            BlinkThread bt = new BlinkThread();
+            bt.setDiplay(javax.microedition.lcdui.Display.getDisplay(this));
+            bt.start();
         }
     }
 }
