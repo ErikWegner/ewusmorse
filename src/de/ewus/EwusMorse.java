@@ -3,6 +3,7 @@ package de.ewus;
 import javax.microedition.midlet.*;
 
 import com.sun.lwuit.*;
+import com.sun.lwuit.animations.*;
 import com.sun.lwuit.events.*;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.GridLayout;
@@ -15,7 +16,7 @@ public class EwusMorse extends MIDlet implements ActionListener {
     Form main, form1, form0;
     
     Label morseCodeDisplay;
-    public static long dih = 150, dah = 3 * dih;
+    public final static long dih = 150, dah = 3 * dih;
     
     
     private void addButtons(char start, int count, Container container) {
@@ -62,7 +63,9 @@ public class EwusMorse extends MIDlet implements ActionListener {
         
         Command clearCommand = new Command("Clear");
         f.addCommand(clearCommand);
-        f.setCommandListener(this);
+        f.addCommandListener(this);
+        f.setTransitionOutAnimator(CommonTransitions.createSlide(CommonTransitions.SLIDE_HORIZONTAL, false, 150));
+        f.setTransitionInAnimator(CommonTransitions.createSlide(CommonTransitions.SLIDE_HORIZONTAL, true, 150));
         
         form0 = new Form(); // Light off
         form0.getStyle().setBgColor(0x000000);
@@ -115,26 +118,22 @@ public class EwusMorse extends MIDlet implements ActionListener {
                     if (ch == '.') {
                         // dot = short
                         if (vibrate) {
-                            display.vibrate((int)dih);
+                            display.vibrate((int)dih*3);
                         } else {
                             // blink
                             form1.show();
-                            Thread.yield();
                             msleep(dih);
                             form0.show();
-                            Thread.yield();
                         }
                     } else if (ch == '-') {
                         // dash = long
                         if (vibrate) {
-                            display.vibrate((int)dah);
+                            display.vibrate((int)dah*3);
                         } else {
                             // blink
                             form1.show();
-                            Thread.yield();
                             msleep(dah);
                             form0.show();
-                            Thread.yield();
                         }
                     }
                 }
