@@ -16,7 +16,8 @@ public class EwusMorse extends MIDlet implements ActionListener {
     Form main, form1, form0;
     
     Label morseCodeDisplay;
-    public final static long dih = 150, dah = 3 * dih;
+    public final static long dih = 200, dah = 5 * dih / 2;
+    public final static int transOutDelay = 100;
     
     
     private void addButtons(char start, int count, Container container) {
@@ -101,11 +102,13 @@ public class EwusMorse extends MIDlet implements ActionListener {
             
             if (!vibrate) {
                 form0.show();
-                msleep(dah);
+                msleep(transOutDelay); // wait for the main screen to transition out
+                msleep(750); // wait a moment with a blank screen
             }
             
             for (int i = 0; i < text.length(); i++) {
                 char ch = text.charAt(i);
+                
                 if (ch == ' ' && lastCharWasBlank) {
                     // long pause
                     msleep(dah);
